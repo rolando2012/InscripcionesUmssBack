@@ -1,0 +1,20 @@
+{
+  "name": "inscripciones-umss-back",
+  "version": "1.0.0",
+  "description": "Backend para inscripciones umss",
+  "license": "ISC",
+  "author": "Rolando Mercado Rojas",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch ./src/index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "morgan": "^1.10.1"
+  }
+}
