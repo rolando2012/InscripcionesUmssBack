@@ -134,3 +134,55 @@ export const obtenerOfertaAcademica = async (req, res) =>{
     }
 }
 
+export const obtenerGruposMateria = async (req, res) =>{
+    const { codigoMateria } = req.params;
+    const cod = parseInt(codigoMateria, 10);
+
+    try {
+        const materia = await prisma.materia.findFirst({
+            where: { codigoMateria: cod }
+        });
+        if (!materia) {
+            throw new Error(`Materia con código ${cod} no encontrada.`);
+        }
+        const grupos = await prisma.grupo.findMany({
+            where: { materiaId: materia.id },
+            include: {
+                docente: {
+                    include: { persona: true }
+                },
+                // ⚠️ CAMBIO CLAVE AQUÍ: Incluir las relaciones de Horario
+                horarios: {
+                    include: {
+                        dia: true,
+                        hora: true,
+                        aula: true
+                    }
+                }
+            }
+        });
+        
+        const gruposDetalle = grupos.map(g => ({
+            id: g.id,
+            nombreGrupo: g.nombreGrupo,
+            horarios: g.horarios.map(h => ({
+                dia: h.dia ? h.dia.nombreDia : null, // nombreDia viene de la tabla Dia
+                horaInicio: h.hora ? h.hora.inicio : null, // inicio viene de la tabla Hora
+                horaFin: h.hora ? h.hora.fin : null, // fin viene de la tabla Hora
+                aula: h.aula ? h.aula.nombreAula : null // nombreAula viene de la tabla Aula
+            })),
+            // concatenar nombres y apellidos
+            docente: g.docente ? g.docente.persona.nombres + ' ' + g.docente.persona.apellidos : '',
+        }));
+        
+        return res.status(200).json({ grupos: gruposDetalle });
+
+    }catch (error) {
+        console.error(`Error al obtener grupos para la materia ${codigoMateria}:`, error.message);
+        
+        return res.status(400).json({
+            error: true,
+            mensaje: error.message || "Ocurrió un error al procesar la solicitud."
+        });
+    }
+}
