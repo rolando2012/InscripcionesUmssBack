@@ -1,0 +1,2 @@
+node src/base/seed/2estudiante.js
+node src/base/seed/1materias.js
