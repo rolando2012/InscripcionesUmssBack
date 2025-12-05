@@ -3,6 +3,6 @@ import {  obtenerOfertaAcademica } from '../controllers/materia.controller.js';
 
 const router = express.Router();
 
-router.get('/lista', obtenerOfertaAcademica);
+router.get('/oferta-academica/:idestudiante', obtenerOfertaAcademica);
 
 export default router;

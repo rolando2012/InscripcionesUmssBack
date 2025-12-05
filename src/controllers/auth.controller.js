@@ -4,7 +4,13 @@ import bcrypt from 'bcrypt';
 import config from '../config.js';
 
 export const loginUser = async (req, res) => {
-    const { CodigoSis, contrasena, fechaNacimiento } = req.body;
+    const { CodigoSis, contrasena, dia, mes,ano } = req.body;
+    
+    // Extraemos el número del mes, por ejemplo "5 - Mayo" → 5
+    const mesNumero = parseInt(mes.split(" - ")[0], 10);
+
+    // Crear la fecha correctamente
+    const fechaNacimiento = new Date(ano, mesNumero - 1, dia);
 
     const estudiante = await prisma.estudiante.findFirst({
         where:{
