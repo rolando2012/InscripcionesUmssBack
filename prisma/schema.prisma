@@ -1,0 +1,197 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Persona {
+  id                Int       @id @default(autoincrement()) @map("id_persona")
+  nombres           String?   @db.VarChar(100) @map("nombres")
+  apellidos         String?   @db.VarChar(100) @map("apellidos")
+  fechaNacimiento   DateTime? @map("fecha_nacimiento") @db.Date
+
+  docentes          Docente[]      @relation("persona_docente")
+  estudiantes       Estudiante[]   @relation("persona_estudiante")
+
+  @@map("persona")
+}
+
+model Docente {
+  id        Int     @id @default(autoincrement()) @map("id_docente")
+  personaId Int?    @map("id_persona")
+  titulo    String? @db.VarChar(30) @map("titulo")
+
+  persona   Persona? @relation("persona_docente", fields: [personaId], references: [id])
+  grupos    Grupo[]  @relation("docente_grupo")
+
+  @@map("docente")
+}
+
+model Estudiante {
+  id            Int         @id @default(autoincrement()) @map("id_estudiante")
+  personaId     Int?        @map("id_persona")
+  codigoSis     Int?        @map("codigo_sis")
+  contrasena    String?     @db.VarChar(255) @map("contrasena")
+
+  persona       Persona?    @relation("persona_estudiante", fields: [personaId], references: [id])
+  kardexes      Kardex[]    @relation("estudiante_kardex")
+  inscripciones Inscripcion[]
+
+  @@map("estudiante")
+}
+
+model Facultad {
+  id             Int       @id @default(autoincrement()) @map("id_facultad")
+  nombreFacultad String?   @map("nombre_facultad")
+
+  carreras       Carrera[]
+
+  @@map("facultad")
+}
+
+model Carrera {
+  id            Int               @id @default(autoincrement()) @map("id_carrera")
+  facultadId    Int?              @map("id_facultad")
+  codigoCarrera Int?              @map("codigo_carrera")
+  nombreCarrera String?           @map("nombre_carrera")
+
+  facultad      Facultad?         @relation(fields: [facultadId], references: [id])
+  kardexes      Kardex[]          @relation("carrera_kardex")
+  carreraMaterias CarreraMateria[]
+
+  @@map("carrera")
+}
+
+model Kardex {
+  id           Int      @id @default(autoincrement()) @map("id_kardex")
+  estudianteId Int      @map("id_estudiante")
+  carreraId    Int?     @map("id_carrera")
+
+  estudiante   Estudiante @relation("estudiante_kardex", fields: [estudianteId], references: [id])
+  carrera      Carrera?   @relation("carrera_kardex", fields: [carreraId], references: [id])
+  historicos   HistoricoNotas[]
+
+  @@map("kardex")
+}
+
+model CarreraMateria {
+  id         Int     @id @default(autoincrement()) @map("id_carr_mat")
+  carreraId  Int?    @map("id_carrera")
+  materiaId  Int?    @map("id_materia")
+
+  carrera    Carrera? @relation(fields: [carreraId], references: [id])
+  materia    Materia? @relation(fields: [materiaId], references: [id])
+
+  @@map("carrera_materia")
+}
+
+model Materia {
+  id                        Int               @id @default(autoincrement()) @map("id_materia")
+  matIdMateria              Int?              @map("mat_id_materia")
+  codigoMateria             Int?              @map("codigo_materia")
+  nombreMateria             String?           @db.VarChar(50) @map("nombre_materia")
+  nivel                     String?           @map("nivel")
+  tipo                      String?           @map("tipo")
+  materiaPrerequisitoCodigo String?           @db.VarChar(10) @map("materia_prerequisito_codigo")
+
+  // self-relation: 'prerequisito' apunta a la Materia que es prerequisito de ésta
+  prerequisito              Materia?          @relation("MateriaPrereq", fields: [matIdMateria], references: [id])
+  // campo inverso: lista de materias que tienen esta materia como prerequisito
+  materiasQueLoTienen       Materia[]         @relation("MateriaPrereq")
+
+  carreraMaterias           CarreraMateria[]
+  grupos                    Grupo[]
+
+  @@map("materia")
+}
+
+model Grupo {
+  id              Int    @id @default(autoincrement()) @map("id_grupo")
+  materiaId       Int?   @map("id_materia")
+  docenteId       Int?   @map("id_docente")
+  codigoGrupo     Int?   @map("codigo_grupo")
+  nombreGrupo     String? @map("nombre_grupo")
+  cuposDisponible Int?   @map("cupos_disponible")
+  mesaDisponible  Boolean? @map("mesa_disponible")
+
+  materia         Materia? @relation(fields: [materiaId], references: [id])
+  docente         Docente? @relation("docente_grupo", fields: [docenteId], references: [id])
+  horarios        Horario[]
+  historicos      HistoricoNotas[]
+  inscripciones   Inscripcion[]
+
+  @@map("grupo")
+}
+
+model Horario {
+  id       Int   @id @default(autoincrement()) @map("id_horario")
+  grupoId  Int?  @map("id_grupo")
+  diaId    Int?  @map("id_dia")
+  horaId   Int?  @map("id_hora")
+  aulaId   Int?  @map("id_aula")
+
+  grupo    Grupo? @relation(fields: [grupoId], references: [id])
+  dia      Dia?   @relation(fields: [diaId], references: [id])
+  hora     Hora?  @relation(fields: [horaId], references: [id])
+  aula     Aula?  @relation(fields: [aulaId], references: [id])
+
+  @@map("horario")
+}
+
+model HistoricoNotas {
+  id           Int    @id @default(autoincrement()) @map("id_historico_notas")
+  kardexId     Int?   @map("id_kardex")
+  grupoId      Int?   @map("id_grupo")
+  gestionNota  String? @db.VarChar(10) @map("gestion_nota")
+  modalidad    String? @db.VarChar(20) @map("modalidad")
+  nota         Int?   @map("nota")
+
+  kardex       Kardex? @relation(fields: [kardexId], references: [id])
+  grupo        Grupo?  @relation(fields: [grupoId], references: [id])
+
+  @@map("historico_notas")
+}
+
+model Inscripcion {
+  id          Int      @id @default(autoincrement()) @map("id_inscripcion")
+  estudianteId Int?    @map("id_estudiante")
+  grupoId     Int?     @map("id_grupo")
+  gestionIns  String?  @db.Char(10) @map("gestion_ins")
+
+  estudiante  Estudiante? @relation(fields: [estudianteId], references: [id])
+  grupo       Grupo?      @relation(fields: [grupoId], references: [id])
+
+  @@map("inscripcion")
+}
+
+model Aula {
+  id         Int    @id @default(autoincrement()) @map("id_aula")
+  nombreAula String? @map("nombre_aula")
+  horarios   Horario[]
+  @@map("aula")
+}
+
+model Dia {
+  id        Int    @id @default(autoincrement()) @map("id_dia")
+  nombreDia String? @map("nombre_dia")
+  horarios  Horario[]
+  @@map("dia")
+}
+
+model Hora {
+  id     Int      @id @default(autoincrement()) @map("id_hora")
+  inicio DateTime? @map("inicio") @db.Time
+  fin    DateTime? @map("fin")    @db.Time
+  horarios Horario[]
+  @@map("hora")
+}
+
