@@ -5,6 +5,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/auth.route.js';
+import materiasRoutes from './routes/materia.route.js';
 
 const app = express();
 
@@ -21,5 +22,6 @@ app.set('port', config.app.port);
 
 //rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/materias', materiasRoutes);
 
 export default app;
